@@ -321,6 +321,7 @@ func (h *Headscale) getMapResponse(
 		DNSConfig:    dnsConfig,
 		Domain:       h.cfg.BaseDomain,
 		PacketFilter: h.aclRules,
+		SSHPolicy:    h.sshPolicy,
 		DERPMap:      h.DERPMap,
 		UserProfiles: profiles,
 		Debug: &tailcfg.Debug{

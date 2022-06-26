@@ -120,6 +120,16 @@ func (h *Headscale) UpdateACLRules() error {
 	log.Trace().Interface("ACL", rules).Msg("ACL rules generated")
 	h.aclRules = rules
 
+	sshrules, err := h.generateSSHRules()
+	if err != nil {
+		return err
+	}
+	log.Trace().Interface("SSH", sshrules).Msg("SSH rules generated")
+	if h.sshPolicy == nil {
+		h.sshPolicy = &tailcfg.SSHPolicy{}
+	}
+	h.sshPolicy.Rules = sshrules
+
 	return nil
 }
 
@@ -176,6 +186,64 @@ func (h *Headscale) generateACLRules() ([]tailcfg.FilterRule, error) {
 			SrcIPs:   srcIPs,
 			DstPorts: destPorts,
 			IPProto:  protocols,
+		})
+	}
+
+	return rules, nil
+}
+
+func (h *Headscale) generateSSHRules() ([]*tailcfg.SSHRule, error) {
+	rules := []*tailcfg.SSHRule{}
+
+	if h.aclPolicy == nil {
+		return nil, errEmptyPolicy
+	}
+
+	// machines, err := h.ListMachines()
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	acceptAction := tailcfg.SSHAction{
+		Message:                  "",
+		Reject:                   false,
+		Accept:                   true,
+		SessionDuration:          0,
+		AllowAgentForwarding:     false,
+		HoldAndDelegate:          "",
+		AllowLocalPortForwarding: true,
+	}
+
+	rejectAction := tailcfg.SSHAction{
+		Message:                  "",
+		Reject:                   true,
+		Accept:                   false,
+		SessionDuration:          0,
+		AllowAgentForwarding:     false,
+		HoldAndDelegate:          "",
+		AllowLocalPortForwarding: false,
+	}
+
+	for _, acl := range h.aclPolicy.SSHs {
+		action := rejectAction
+		if acl.Action == "accept" {
+			action = acceptAction
+		}
+		princips := make([]*tailcfg.SSHPrincipal, 0, len(acl.Sources))
+		for _, src := range acl.Sources {
+			princips = append(princips, &tailcfg.SSHPrincipal{
+				UserLogin: src,
+			})
+		}
+		userMap := make(map[string]string, len(acl.Users))
+		for _, user := range acl.Users {
+			userMap[user] = "="
+		}
+		rules = append(rules, &tailcfg.SSHRule{
+			RuleExpires: nil,
+			Principals:  princips,
+			SSHUsers:    userMap,
+			Action:      &action,
 		})
 	}
 

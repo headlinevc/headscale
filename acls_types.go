@@ -16,6 +16,7 @@ type ACLPolicy struct {
 	TagOwners TagOwners `json:"tagOwners" yaml:"tagOwners"`
 	ACLs      []ACL     `json:"acls"      yaml:"acls"`
 	Tests     []ACLTest `json:"tests"     yaml:"tests"`
+	SSHs      []SSH     `json:"ssh"       yaml:"ssh"`
 }
 
 // ACL is a basic rule for the ACL Policy.
@@ -40,6 +41,14 @@ type ACLTest struct {
 	Source string   `json:"src"           yaml:"src"`
 	Accept []string `json:"accept"          yaml:"accept"`
 	Deny   []string `json:"deny,omitempty" yaml:"deny,omitempty"`
+}
+
+// SSH controls who can ssh into which machines
+type SSH struct {
+	Action       string   `json:"action" yaml:"action"`
+	Sources      []string `json:"src"    yaml:"src"`
+	Destinations []string `json:"dst"    yaml:"dst"`
+	Users        []string `json:"users"  yaml:"users"`
 }
 
 // UnmarshalJSON allows to parse the Hosts directly into netaddr objects.
